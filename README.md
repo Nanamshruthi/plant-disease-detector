@@ -18,11 +18,6 @@ A web application that detects plant diseases from leaf images using deep learni
 - TensorFlow 2.x
 - Flask
 
-### Installation
-'''bash
-- git clone https://github.com/yourusername/plant-disease-detector.git
-- cd plant-disease-detector
-- pip install -r requirements.txt
 
 ### Run the Application
 - python app.py
