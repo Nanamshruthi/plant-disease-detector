@@ -21,9 +21,11 @@ A web application that detects plant diseases from leaf images using deep learni
   Installation
 '''bash
 
-git clone https://github.com/Nanamshruthi/plant-disease-detector.git
-cd plant-disease-detector
-pip install -r requirements.txt
+-git clone https://github.com/Nanamshruthi/plant-disease-detector.git
+
+-cd plant-disease-detector
+
+-pip install -r requirements.txt
 
 
 ### Run the Application
