@@ -12,10 +12,19 @@
 #python-dotenv==1.0.0  # For environment variables
 
 
-
---extra-index-url https://download.tensorflow.org/whl/cpu
-tensorflow-cpu==2.10.0  # More stable on Render
+# Base dependencies
 flask==2.3.2
 gunicorn==20.1.0
 pillow==10.0.0
-numpy==1.22.4  # Compatible with TF 2.10
+numpy==1.22.4
+gdown==4.6.6
+werkzeug==2.3.7
+
+# TensorFlow with verified download source
+--extra-index-url https://storage.googleapis.com/tensorflow/whl/cpu
+tensorflow-cpu==2.10.0
+
+# Optional: Add these if you still get SSL warnings (remove the #)
+ --trusted-host storage.googleapis.com
+ --trusted-host pypi.org
+ --trusted-host files.pythonhosted.org
