@@ -1,6 +1,0 @@
-model.h5
-__pycache__/
-venv/
-uploads/
-*.pyc
-.env
