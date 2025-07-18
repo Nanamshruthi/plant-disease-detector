@@ -1,117 +1,72 @@
 import os
-import numpy as np
-from flask import Flask, request, render_template, jsonify, send_from_directory
-from werkzeug.utils import secure_filename
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
-from PIL import Image
+from flask import Flask
+from keras.models import load_model
 import gdown
 
-# Initialize Flask app
 app = Flask(__name__)
 
 # Configuration
-app.config.update(
-    UPLOAD_FOLDER='uploads',
-    ALLOWED_EXTENSIONS={'png', 'jpg', 'jpeg', 'gif', 'webp'},
-    MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB
-    MODEL_PATH='model.h5'
-)
+app.config['MODEL_PATH'] = os.path.join(os.path.dirname(__file__), 'model.h5')
 
-# Ensure upload folder exists
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-# Download model if not present (Google Drive)
-if not os.path.exists(app.config['MODEL_PATH']):
-    print("⏳ Downloading model from Google Drive...")
+def initialize_model():
+    """Load or download the model with proper error handling"""
+    model_path = app.config['MODEL_PATH']
+    
+    # Debugging information
+    print("\n=== Debugging Information ===")
+    print("Current directory:", os.getcwd())
+    print("Directory contents:", os.listdir())
+    print("Full model path:", os.path.abspath(model_path))
+    
+    # Try to load existing model first
+    if os.path.exists(model_path):
+        print(f"Found existing model at {model_path}")
+        try:
+            return load_model(model_path)
+        except Exception as e:
+            print(f"Error loading existing model: {e}")
+            os.remove(model_path)  # Remove corrupted file
+            print("Removed potentially corrupted model file")
+    
+    # Download from Google Drive if not found locally
+    print("Attempting to download model...")
     try:
+        # Make sure your Google Drive file is shared as "Anyone with the link"
+        file_id = '1GFbmdxkKRakJAUWdaQbdK3le9p-6X_BM'  # REPLACE WITH YOUR ACTUAL FILE ID
         gdown.download(
-            'https://drive.google.com/uc?id=1GFbmdxkKRakJAUWdaQbdK3le9p-6X_BM',
-            app.config['MODEL_PATH'],
+            f'https://drive.google.com/uc?id={file_id}',
+            model_path,
             quiet=False
         )
-        print("✅ Model downloaded successfully!")
+        
+        # Verify download
+        if not os.path.exists(model_path):
+            raise RuntimeError("Download completed but file not created")
+            
+        print(f"Model successfully downloaded to {model_path}")
+        return load_model(model_path)
+        
     except Exception as e:
-        print(f"❌ Model download failed: {str(e)}")
+        print(f"\n❌ Critical Error: {str(e)}")
+        print("\nTroubleshooting steps:")
+        print("1. Verify the Google Drive file ID is correct")
+        print("2. Ensure the file is shared as 'Anyone with the link'")
+        print("3. Check your internet connection")
+        print("4. For production, consider bundling model.h5 with your deployment")
         raise
 
-# Load model
+# Initialize model when starting the app
 try:
-    model = load_model(app.config['MODEL_PATH'])
-    print("🚀 Model loaded successfully!")
+    model = initialize_model()
+    print("✅ Model successfully loaded!")
 except Exception as e:
-    print(f"❌ Model loading failed: {str(e)}")
-    raise
-
-# Disease information
-DISEASE_INFO = {
-    0: {
-        'name': 'Healthy',
-        'recommendation': 'The plant appears healthy. Maintain current care routine.'
-    },
-    1: {
-        'name': 'Powdery Mildew',
-        'recommendation': 'Apply sulfur-based fungicides weekly. Improve air circulation.'
-    },
-    2: {
-        'name': 'Rust',
-        'recommendation': 'Remove infected leaves. Use chlorothalonil fungicides.'
-    }
-}
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
-
-def predict_disease(image_path):
-    """Process image and return predictions"""
-    img = Image.open(image_path).convert('RGB').resize((225, 225))
-    img_array = img_to_array(img) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
-    predictions = model.predict(img_array)[0]
-    return predictions
+    print(f"❌ Failed to initialize model: {e}")
+    # You might want to exit here if your app can't run without the model
+    # import sys; sys.exit(1)
 
 @app.route('/')
 def home():
-    return render_template('index.html')
-
-@app.route('/predict', methods=['POST'])
-def handle_prediction():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    file = request.files['file']
-    if not file or file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-    
-    if not allowed_file(file.filename):
-        return jsonify({'error': f'Allowed formats: {app.config["ALLOWED_EXTENSIONS"]}'}), 400
-    
-    try:
-        # Save uploaded file
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        
-        # Get prediction
-        predictions = predict_disease(filepath)
-        class_id = np.argmax(predictions)
-        confidence = float(predictions[class_id]) * 100
-        
-        return jsonify({
-            'status': 'success',
-            'prediction': DISEASE_INFO[class_id]['name'],
-            'confidence': f"{confidence:.2f}%",
-            'recommendation': DISEASE_INFO[class_id]['recommendation'],
-            'image_url': f"/uploads/{filename}"
-        })
-    
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/uploads/<filename>')
-def serve_upload(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    return "Model loading application is running!"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
