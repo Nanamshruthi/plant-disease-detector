@@ -8,4 +8,4 @@ gdown==4.6.6
 werkzeug==2.3.7
 
 # Additional constraints to prevent conflicts
---use-deprecated=legacy-resolver
+#--use-deprecated=legacy-resolver
