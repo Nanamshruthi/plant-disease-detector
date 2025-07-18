@@ -1,0 +1,22 @@
+# Core Requirements
+#flask==2.3.2
+#tensorflow==2.12.0
+#pillow==10.0.0
+#numpy==1.24.3
+#werkzeug==2.3.7
+
+# Development/Additional Packages (optional)
+#opencv-python==4.7.0.72
+#matplotlib==3.7.1
+#gunicorn==20.1.0  # For production deployment
+#python-dotenv==1.0.0  # For environment variables
+
+
+
+
+flask==2.3.2
+gunicorn==20.1.0
+tensorflow==2.12.0
+pillow==10.0.0
+numpy==1.24.3
+werkzeug==2.3.7
