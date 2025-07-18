@@ -1,114 +1,132 @@
-<script>
-    // DOM elements
-    const uploadBox = document.getElementById('uploadBox');
-    const fileInput = document.getElementById('fileInput');
-    const detectBtn = document.getElementById('detectBtn');
-    const previewImage = document.getElementById('previewImage');
-    const resultsSection = document.getElementById('resultsSection');
-    
-    // Disease detection results elements
-    const diseaseResult = document.getElementById('diseaseResult');
-    const confidenceResult = document.getElementById('confidenceResult');
-    const recommendationResult = document.getElementById('recommendationResult');
+document.addEventListener('DOMContentLoaded', function() {
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('file-input');
+    const previewImage = document.getElementById('preview-image');
+    const imagePreview = document.getElementById('image-preview');
+    const detectBtn = document.getElementById('detect-btn');
+    const loading = document.getElementById('loading');
+    const results = document.getElementById('results');
+    const removeBtn = document.getElementById('remove-btn');
+    const browseBtn = document.querySelector('.browse-btn');
+    const uploadContent = document.querySelector('.upload-content');
 
-    // Handle file selection
-    uploadBox.addEventListener('click', () => fileInput.click());
-    
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length) {
-            const file = e.target.files[0];
-            
-            if (!file.type.match('image.*')) {
-                alert('Please select an image file (JPEG, PNG, etc.)');
-                return;
-            }
-            
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    // Highlight drop area when item is dragged over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+        dropArea.classList.add('highlight');
+    }
+
+    function unhighlight() {
+        dropArea.classList.remove('highlight');
+    }
+
+    // Handle dropped files
+    dropArea.addEventListener('drop', handleDrop, false);
+    browseBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handleFiles);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles({ target: { files } });
+    }
+
+    function handleFiles(e) {
+        const file = e.target.files[0];
+        if (file && file.type.match('image.*')) {
             const reader = new FileReader();
             
-            reader.onload = (event) => {
-                previewImage.src = event.target.result;
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                imagePreview.style.display = 'block';
+                uploadContent.style.opacity = '0';
+                setTimeout(() => {
+                    uploadContent.style.display = 'none';
+                }, 300);
                 detectBtn.disabled = false;
             };
             
             reader.readAsDataURL(file);
         }
+    }
+
+    // Remove image
+    removeBtn.addEventListener('click', function() {
+        previewImage.src = '';
+        imagePreview.style.display = 'none';
+        uploadContent.style.display = 'block';
+        setTimeout(() => {
+            uploadContent.style.opacity = '1';
+        }, 10);
+        detectBtn.disabled = true;
+        fileInput.value = '';
+        results.style.display = 'none';
     });
 
-    // Handle drag and drop
-    uploadBox.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadBox.classList.add('dragover');
-    });
+    // Detect disease
+    detectBtn.addEventListener('click', detectDisease);
 
-    uploadBox.addEventListener('dragleave', () => {
-        uploadBox.classList.remove('dragover');
-    });
-
-    uploadBox.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadBox.classList.remove('dragover');
-        
-        if (e.dataTransfer.files.length) {
-            const file = e.dataTransfer.files[0];
-            
-            if (!file.type.match('image.*')) {
-                alert('Please select an image file (JPEG, PNG, etc.)');
-                return;
-            }
-            
-            fileInput.files = e.dataTransfer.files;
-            const reader = new FileReader();
-            
-            reader.onload = (event) => {
-                previewImage.src = event.target.result;
-                detectBtn.disabled = false;
-            };
-            
-            reader.readAsDataURL(file);
-        }
-    });
-
-    // Handle detection button click
-    detectBtn.addEventListener('click', async () => {
-        if (!fileInput.files.length) return;
+    function detectDisease() {
+        loading.style.display = 'block';
+        results.style.display = 'none';
         
         const file = fileInput.files[0];
         const formData = new FormData();
         formData.append('file', file);
-        
-        detectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        detectBtn.disabled = true;
-        
-        try {
-            const response = await fetch('/predict', {
-                method: 'POST',
-                body: formData
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayResults(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            displayResults({
+                disease: 'Error',
+                confidence: '0%',
+                treatment: 'Failed to analyze the image. Please try again.'
             });
-            
-            const data = await response.json();
-            
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            
-            // Display results
-            diseaseResult.textContent = data.prediction;
-            confidenceResult.textContent = data.confidence;
-            recommendationResult.textContent = data.recommendation;
-            
-            // Update image preview with the uploaded version (in case it was resized)
-            if (data.image_url) {
-                previewImage.src = data.image_url;
-            }
-            
-            resultsSection.classList.remove('hidden');
-            
-        } catch (error) {
-            alert('Error: ' + error.message);
-            console.error('Detection error:', error);
-        } finally {
-            detectBtn.innerHTML = '<i class="fas fa-search"></i> Detect Disease';
-            detectBtn.disabled = false;
+        })
+        .finally(() => {
+            loading.style.display = 'none';
+        });
+    }
+
+    function displayResults(data) {
+        document.getElementById('disease-result').textContent = data.disease || '-';
+        document.getElementById('confidence-result').textContent = data.confidence || '-';
+        document.getElementById('treatment-result').textContent = data.treatment || '-';
+        
+        // If you have a sample image for the detected disease
+        if (data.sample_image) {
+            document.getElementById('result-image').src = data.sample_image;
+            document.querySelector('.result-image').style.display = 'block';
+        } else {
+            document.querySelector('.result-image').style.display = 'none';
         }
-    });
-</script>
+        
+        results.style.display = 'block';
+    }
+});
+
+
