@@ -1,15 +1,11 @@
-# Core requirements
+# Core dependencies with exact versions
 flask==2.3.2
-gdown==4.7.1
-tensorflow==2.12.0  # Specific version matching your model
+gunicorn==20.1.0
+tensorflow-cpu==2.10.0
+pillow==10.0.0
+numpy==1.22.4  # Last version fully compatible with TF 2.10
+gdown==4.6.6
+werkzeug==2.3.7
 
-# Required dependencies
-numpy==1.24.3
-keras==2.12.0  # Should match TensorFlow version
-protobuf==3.20.3  # Often needed for TensorFlow
-requests==2.31.0  # Required by gdown
-h5py==3.8.0  # For .h5 model files
-
-# Optional but recommended for production
-gunicorn==20.1.0  # Production server
-python-dotenv==1.0.0  # For environment variables
+# Additional constraints to prevent conflicts
+--use-deprecated=legacy-resolver
