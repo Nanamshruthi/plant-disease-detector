@@ -30,7 +30,7 @@ A web application that detects plant diseases from leaf images using deep learni
 
 ### Run the Application
 - python app.py
-- Access at: http://localhost:5000
+
 
 ### Project structure
 📦 plant-disease-detector
