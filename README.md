@@ -34,22 +34,31 @@ A web application that detects plant diseases from leaf images using deep learni
 
 ### Project structure
 📦 plant-disease-detector
+├── backebd
 
-├── 🐍 app.py                     # Flask backend (main application)
+    ├── 🐍 app.py                     # Flask backend (main application)
 
-├── 🤖 model.h5                   # Trained TensorFlow/Keras model
+    ├── 🤖 model.h5                   # Trained TensorFlow/Keras model
+ 
+    ├── 📜 requirements.txt           # Python dependencies
 
-├── 📜 requirements.txt           # Python dependencies
+    ├── procfile
+
+    ├── server.log
+
+    ├── train_model
 
 ├── 📄 README.md                   # Project documentation
 
-├── 📁 static/ # Static assets
+├── frontend
+
+    ├── 📁 static/ # Static assets
 
     └── styles.css # Custom stylesheet
 
     └── script.js # Frontend interactivity
 
-├── 📁 templates/ # HTML templates
+    ├── 📁 templates/ # HTML templates
 
      └── 🖥️ index.html # Main interface
 
